@@ -37,6 +37,7 @@ smallMeteor = pygame.image.load("MeteorKlein.png")
 mediumMeteor = pygame.image.load("MeteorMittel.png")
 bigMeteor = pygame.image.load("MeteorGroß.png")
 
+powerUpImage = pygame.image.load("PowerUp.png")
 
 screen = pygame.display.set_mode(screenSize)
 clock = pygame.time.Clock()
@@ -54,6 +55,32 @@ def showtext(text, x, y, fontSize):
 # Display the start of loading
 
 showtext("Loading", screenSize[0] / 2, screenSize[1] / 2, 100)
+
+
+class powerUp:
+    def __init__(self):
+        possiblePowerUps = [
+            "Less Spray",  # Weniger Spray
+            "More DMG",  # Mehr dmg
+            "More Lives",  # Mehr leben
+            "Faster Shooting",  # Schnellers schießen
+            "Enhance Weapon",  # Waffe soll verändert oder verbesser werden ka 2 gun sprays or smth like that
+            "Nuke",  # Kills every enemy on the screen
+        ]
+        self.posX = 350
+        self.posY = -20
+        self.lives = 10
+        self.direction = [randint(-4, 4), randint(3, 9)]
+        self.rect = pygame.Rect(350, -20, 40, 40)
+        self.powerUp = possiblePowerUps[randint(0, 5)]
+
+    def update(self):
+        self.posX += self.direction[0]
+        self.posY += self.direction[1]
+        self.rect = pygame.Rect(self.posX, self.posY, 40, 40)
+
+    def draw(self):
+        screen.blit(powerUpImage, (self.posX, self.posY))
 
 
 class explosion:
@@ -180,7 +207,7 @@ class meteor:
         self.rect = pygame.Rect(posX, posY, self.width, self.height)
         # The direction will also be the speed i will just multiply the value of
         # the direction by 2 or something like that XD
-        self.direction = [randint(-9, 9), randint(3, 9)]
+        self.direction = [randint(-6, 6), randint(3, 9)]
 
     def draw(self):
         screen.blit(self.meteorImage, (self.posX, self.posY))
@@ -292,6 +319,7 @@ def gameLoop():
     enemyBullets = []
     backgroundPositions = [[0, 0]]
     explosions = []
+    powerUps = []
     counter = 1
     while 1:
         for event in pygame.event.get():
@@ -316,11 +344,12 @@ def gameLoop():
         playerPlane.update()
         playerPlane.draw()
 
-        if counter % 10 == 0 and len(meteors) < 30:
+        if counter % 10 == 0 and len(meteors) < 20:
             meteors.append(meteor(350, -180, randint(5, 10), 50, 50))
 
         if counter % 500 == 0:
-            enemies.append(enemy(50, randint(20, 35)))
+            enemies.append(enemy(15, randint(20, 35)))
+            powerUps.append(powerUp())
 
         if counter % playerPlane.shotTicks == 0:
             bullets.append(
@@ -336,6 +365,10 @@ def gameLoop():
                     colors["paleYellow"],
                 )
             )
+
+        for currentPowerUp in powerUps:
+            currentPowerUp.update()
+            currentPowerUp.draw()
 
         for currentBullet in bullets:
             currentBullet.update()
