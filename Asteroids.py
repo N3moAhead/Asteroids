@@ -43,6 +43,9 @@ screen = pygame.display.set_mode(screenSize)
 clock = pygame.time.Clock()
 pygame.display.set_caption("Asteroids")
 
+gameIcon = pygame.image.load("JetImage.png")
+pygame.display.set_icon(gameIcon)
+
 
 def showtext(text, x, y, fontSize):
     font = pygame.font.Font(None, fontSize)
@@ -64,7 +67,8 @@ class powerUp:
             "More DMG",  # Mehr dmg
             "More Lives",  # Mehr leben
             "Faster Shooting",  # Schnellers schießen
-            "Enhance Weapon",  # Waffe soll verändert oder verbesser werden ka 2 gun sprays or smth like that
+            # Waffe soll verändert oder verbesser werden ka 2 gun sprays or smth like that
+            "Enhance Weapon",
             "Nuke",  # Kills every enemy on the screen
         ]
         self.posX = 350
@@ -72,7 +76,8 @@ class powerUp:
         self.lives = 10
         self.direction = [randint(-4, 4), randint(3, 9)]
         self.rect = pygame.Rect(350, -20, 40, 40)
-        self.powerUp = possiblePowerUps[randint(0, 5)]
+        # self.powerUp = possiblePowerUps[randint(0, 5)]
+        self.powerUp = "Nuke"
 
     def update(self):
         self.posX += self.direction[0]
@@ -98,7 +103,8 @@ class explosion:
             return False
 
     def draw(self):
-        screen.blit(explosionImages[int(self.counter / 6)], (self.posX, self.posY))
+        screen.blit(
+            explosionImages[int(self.counter / 6)], (self.posX, self.posY))
 
 
 class bullet:
@@ -207,7 +213,7 @@ class meteor:
         self.rect = pygame.Rect(posX, posY, self.width, self.height)
         # The direction will also be the speed i will just multiply the value of
         # the direction by 2 or something like that XD
-        self.direction = [randint(-6, 6), randint(3, 9)]
+        self.direction = [randint(-4, 4), randint(3, 9)]
 
     def draw(self):
         screen.blit(self.meteorImage, (self.posX, self.posY))
@@ -215,7 +221,8 @@ class meteor:
         #     screen, colors["darkGrey"], (self.posX, self.posY, self.width, self.height)
         # )
         showtext(
-            str(self.lives), self.posX + self.width / 2, self.posY + self.height / 2, 50
+            str(self.lives), self.posX + self.width /
+            2, self.posY + self.height / 2, 50
         )
 
     def update(self):
@@ -302,7 +309,8 @@ class interface:
             showtext("Play", 350, 500, 50)
             showtext("Game Over", screenSize[0] / 2, screenSize[1] * 0.3, 50)
             showtext(
-                "Score " + str(self.score), screenSize[0] / 2, screenSize[1] * 0.5, 80
+                "Score " +
+                str(self.score), screenSize[0] / 2, screenSize[1] * 0.5, 80
             )
             pygame.display.update()
 
@@ -369,6 +377,25 @@ def gameLoop():
         for currentPowerUp in powerUps:
             currentPowerUp.update()
             currentPowerUp.draw()
+            if currentPowerUp.rect.colliderect(playerPlane.rect):
+                if currentPowerUp.powerUp == "Nuke":
+                    for currentMeteor in meteors:
+                        explosions.append(
+                            explosion(currentMeteor.posX, currentMeteor.posY))
+                        gameInterface.score += int(
+                            currentMeteor.defaultLives *
+                            (currentMeteor.width / 10)
+                        )
+                    meteors = []
+                powerUps.remove(currentPowerUp)
+            if (
+                currentPowerUp.posY > 700
+                or currentPowerUp.direction[0] > 0
+                and currentPowerUp.posX > 700
+                or currentPowerUp.direction[1] < 0
+                and currentMeteor.posX < 0
+            ):
+                powerUps.remove(currentPowerUp)
 
         for currentBullet in bullets:
             currentBullet.update()
@@ -377,24 +404,40 @@ def gameLoop():
             for currentEnemy in enemies:
                 if currentBullet.rect.colliderect(currentEnemy.rect):
                     destroyBullet = True
-                    currentEnemy.lives -= 1
-                    if currentEnemy.lives == 0:
+                    currentEnemy.lives -= playerPlane.dmg
+                    if currentEnemy.lives <= 0:
+                        explosions.append(
+                            explosion(currentEnemy.posX + 20,
+                                      currentEnemy.posY + 20)
+                        )
+                        explosions.append(
+                            explosion(currentEnemy.posX + 20,
+                                      currentEnemy.posY - 20)
+                        )
+                        explosions.append(
+                            explosion(currentEnemy.posX - 20,
+                                      currentEnemy.posY + 20)
+                        )
+                        explosions.append(
+                            explosion(currentEnemy.posX - 20,
+                                      currentEnemy.posY - 20)
+                        )
                         enemies.remove(currentEnemy)
             for currentMeteor in meteors:
                 if currentMeteor.rect.colliderect(currentBullet.rect):
                     destroyBullet = True
                     currentMeteor.lives -= playerPlane.dmg
-                    if currentMeteor.lives == 0:
+                    if currentMeteor.lives <= 0:
                         explosions.append(
                             explosion(currentMeteor.posX, currentMeteor.posY)
                         )
                         gameInterface.score += int(
-                            currentMeteor.defaultLives * (currentMeteor.width / 10)
+                            currentMeteor.defaultLives *
+                            (currentMeteor.width / 10)
                         )
                         meteors.remove(currentMeteor)
             if currentBullet.posY < 0 or destroyBullet:
                 bullets.remove(currentBullet)
-
         for currentMeteor in meteors:
             currentMeteor.update()
             currentMeteor.draw()
